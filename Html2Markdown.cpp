@@ -189,7 +189,8 @@ Html::Tag Html::StringToHtmlTag(const char* str, size_t length) {
  **/
 bool Html::IsSingleTagName(const char* name, size_t length) {
     if((STRCMP_NOCASE(name, "img", length) == 0)) return true;
-    if((STRCMP_NOCASE(name, "br", length) == 0)) return true;
+    if ((STRCMP_NOCASE(name, "br", length) == 0)) return true;
+    if ((STRCMP_NOCASE(name, "br/", length) == 0)) return true;
     if((STRCMP_NOCASE(name, "hr", length) == 0)) return true;
     
     return false;
