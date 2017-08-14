@@ -180,7 +180,6 @@ Html::Tag Html::StringToHtmlTag(const char* str, size_t length) {
     if(STRCMP_NOCASE(str, "tbody", length) == 0) {
         return Html::TBODY;
     }
-  
     return Html::Unknown;
 }
 
@@ -350,10 +349,14 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
             HtmlNode::AttributeMap::const_iterator alt_it = node->attributes.find("alt");
             HtmlNode::AttributeMap::const_iterator title_it = node->attributes.find("title");
             
-            if(src_it == node->attributes.end()) throw Html2Markdown::Exception("no src attribute found in img tag");
-            if(alt_it == node->attributes.end()) throw Html2Markdown::Exception("no alt attribute found in img tag");
-            
-            result += "![" + alt_it->second+ "]";
+            if (src_it == node->attributes.end()) {
+                break;
+            }
+            std::string alt_str("");
+            if (alt_it != node->attributes.end()) {
+                alt_str = alt_it->second;
+            }
+            result += "![" + alt_str + "]";
             result += "(" + src_it->second;
             if(title_it != node->attributes.end())
                 result += " \"" + title_it->second + "\"";
@@ -369,10 +372,8 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
                 size_t start_pos = 0;
                 for(size_t i = 0; i < node->childs.size(); ++i) {
                     size_t end_pos = node->value.find(node->childs[i]->content);
-                    
-                    std::string block = node->value.substr(start_pos, end_pos-start_pos);
+                    std::string block = node->value.substr(start_pos, end_pos - start_pos);
                     result += block + ConvertHtmlTree(node->childs[i], config);
-                    
                     start_pos = end_pos + node->childs[i]->content.size();
                 }
                 if(start_pos < node->value.size())
@@ -571,6 +572,7 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
 }
 
 std::string Html2Markdown::Convert(const char* str, size_t length, const Html2Markdown::Configuration& config) {
+    std::string ori_str(str, length);
     std::string processed_str = ProcessHtmlString(str);
     const char* html = processed_str.c_str();
     length = processed_str.length();
@@ -634,13 +636,17 @@ std::string Html2Markdown::Convert(const char* str, size_t length, const Html2Ma
                         }
                     }
                 }
+                else {
+                    return ori_str;
+                }
                 
                 i = end_tag_block;
                 continue;
                 
             } else {
                 if(tag_stack.size() == 0) {
-                    throw Html2Markdown::Exception(("unmatched tag found, tag " + tag_str).c_str());
+                    //throw Html2Markdown::Exception(("unmatched tag found, tag " + tag_str).c_str());
+                    return ori_str;
                 }
                 
                 size_t end_content_index = i+1;
