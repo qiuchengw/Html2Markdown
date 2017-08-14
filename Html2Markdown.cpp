@@ -8,6 +8,8 @@
 
 #include "Html2Markdown.h"
 #include "StringUtil.h"
+#include <algorithm>
+#include <xfunctional>
 
 #ifdef _WIN32
 static int strncasecmp(const char* c1, const char* c2, int length) {
@@ -79,6 +81,12 @@ struct Html2Markdown::HtmlNode {
 Html::Tag Html::StringToHtmlTag(const char* str, size_t length) {
     if(STRCMP_NOCASE(str, "p", length) == 0) {
         return Html::P;
+    }
+    if ((STRCMP_NOCASE(str, "i", length) == 0)
+        || (STRCMP_NOCASE(str, "b", length) == 0)
+        || (STRCMP_NOCASE(str, "span", length) == 0)
+        || (STRCMP_NOCASE(str, "u", length) == 0) ){
+        return Html::P; // 把i也认为是一个段落
     }
     if(STRCMP_NOCASE(str, "A", length) == 0) {
         return Html::A;
@@ -289,21 +297,24 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
             HtmlNode::AttributeMap::const_iterator title_it = node->attributes.find("title");
             HtmlNode::AttributeMap::const_iterator href_it = node->attributes.find("href");
             
-            if(href_it == node->attributes.end()) {
-                throw Html2Markdown::Exception("no href attribute found in a link tag");
+            if(href_it != node->attributes.end()) {
+                // automic links
+                if (converted_val.find('@') != std::string::npos ||
+                    (title_it != node->attributes.end() && title_it->second == href_it->second)) {
+                    result += "<" + converted_val + ">";
+                }
+                else {
+                    result += "[" + node->value + "](" + href_it->second;
+                    if (title_it != node->attributes.end()) {
+                        result += " \"" + node->attributes["title"] + "\"";
+                    }
+                    result += ")";
+                }
+            }
+            else {
+                result += node->value;
             }
             
-            // automic links
-            if(converted_val.find('@') != std::string::npos || 
-               (title_it != node->attributes.end() && title_it->second == href_it->second)) {
-                result += "<" + converted_val + ">";
-            } else {
-                result += "[" + node->value + "](" + href_it->second;
-                if(title_it != node->attributes.end()) {
-                    result += " \"" + node->attributes["title"] + "\"";
-                }
-                result += ")";
-            }
             break;
         }
             
@@ -562,7 +573,8 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
 std::string Html2Markdown::Convert(const char* str, size_t length, const Html2Markdown::Configuration& config) {
     std::string processed_str = ProcessHtmlString(str);
     const char* html = processed_str.c_str();
-    
+    length = processed_str.length();
+
     std::vector<HtmlNode*> nodes;
     std::vector<HtmlNode*> tag_stack;
     
