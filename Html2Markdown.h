@@ -121,12 +121,17 @@ public:
         
     class Exception {
     public:
-        Exception(const char* mssg);
+		Exception(const char* mssg)
+			:mMssg(mssg) {
+
+		}
         
-        const char* what() const;
+		std::string what() const {
+			return mMssg;
+		}
         
     private:
-        const char* mMssg;
+        std::string mMssg;
     };
 
     static Configuration DefaultConfiguration;

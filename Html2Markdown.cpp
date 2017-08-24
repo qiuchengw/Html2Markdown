@@ -256,9 +256,6 @@ Html2Markdown::Configuration Html2Markdown::DefaultConfiguration('+',
                                                                  Html2Markdown::Configuration::Indented,
                                                                  false);
 
-Html2Markdown::Exception::Exception(const char* exp): mMssg(exp) { }
-const char* Html2Markdown::Exception::what() const { return mMssg; }
-
 std::string Html2Markdown::ConvertBlockQuote(HtmlNode* node, const Html2Markdown::Configuration& config) {
     std::string processed;
     
@@ -573,7 +570,6 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
 }
 
 std::string Html2Markdown::Convert(const char* str, size_t length, const Html2Markdown::Configuration& config) {
-    std::string ori_str(str, length);
     std::string processed_str = ProcessHtmlString(str);
     const char* html = processed_str.c_str();
     length = processed_str.length();
@@ -637,17 +633,13 @@ std::string Html2Markdown::Convert(const char* str, size_t length, const Html2Ma
                         }
                     }
                 }
-                else {
-                    return ori_str;
-                }
                 
                 i = end_tag_block;
                 continue;
                 
             } else {
                 if(tag_stack.size() == 0) {
-                    //throw Html2Markdown::Exception(("unmatched tag found, tag " + tag_str).c_str());
-                    return ori_str;
+                    throw Html2Markdown::Exception(("unmatched tag found, tag " + tag_str).c_str());
                 }
                 
                 size_t end_content_index = i+1;
